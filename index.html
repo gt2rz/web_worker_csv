@@ -73,10 +73,6 @@
     <script>
       function uploadCSV(file) {
         const worker = new Worker("worker.js");
-        
-        worker.onerror = function (event) {
-          console.error(event);
-        };
 
         worker.onmessage = function (event) {
           const { type, linesProcessed, lines, errors } = event.data;
@@ -93,7 +89,6 @@
           
           if(type === "done") {
             if (errors.length > 0) {
-              console.error(errors);
               document.getElementById("error").style.display = "block";
             } else {
               document.getElementById("success").style.display = "block";

@@ -1,6 +1,7 @@
+let errors = [];
+
 function csvProcess({ content, separator = "," }) {
   const lines = content.split("\n");
-  let errors = [];
 
   self.postMessage({"type": "init", "lines": lines.length });
 
