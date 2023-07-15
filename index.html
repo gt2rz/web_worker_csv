@@ -1,0 +1,117 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Procesamiento de CSV con Web Workers</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+      }
+      div{
+        max-width: 100%;
+        display: flex;
+        justify-content: center;
+        margin: 0 auto;
+        margin-top: 20px;
+      }
+      main{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      h1 {
+        text-align: center;
+      }
+      input {
+        display: flex;
+        justify-content: center;
+        /* margin: 0 auto; */
+      }
+      #success{
+        display: none;
+        background-color: #229b22;
+        padding: 10px;
+        color: white;
+      }
+      #error{
+        display: none;
+        background-color: #d74a4a;
+        padding: 10px;
+        color: white;
+      }
+    </style>
+    
+  </head>
+
+  <body>
+    <main>
+      <h1>Procesamiento de CSV con Web Workers</h1>
+      <div>
+        <input
+        type="file"
+        id="csvFile"
+        accept=".csv"
+        onchange="uploadCSV(this.files[0])"
+        />
+      </div>
+      <div id="progress" style="display:none;">
+        <label for="file">Progreso:</label>
+        <progress id="file" max="100" value="0" />
+      </div>
+      <div id="success" style="display:none;">
+        <p>El archivo cumple con las validaciones</p>
+        <button onclick="window.location.reload()">Guardar</button>
+      </div>
+
+      <div id="error" style="display:none;">
+        <p>El archivo contiene errores</p>
+        <button onclick="window.location.reload()">Volver a subir</button>
+      </div>
+    </main>
+      
+    <script>
+      function uploadCSV(file) {
+        const worker = new Worker("worker.js");
+        
+        worker.onerror = function (event) {
+          console.error(event);
+        };
+
+        worker.onmessage = function (event) {
+          const { type, linesProcessed, lines, errors } = event.data;
+          
+          if(type === "init"){
+            document.getElementById("file").max = lines;
+            return;
+          }
+          
+          if(type === "progress") {
+            document.getElementById("file").value = linesProcessed;
+            return;
+          }
+          
+          if(type === "done") {
+            if (errors.length > 0) {
+              console.error(errors);
+              document.getElementById("error").style.display = "block";
+            } else {
+              document.getElementById("success").style.display = "block";
+            }
+            // document.getElementById("progress").style.display = "none";
+          }
+          
+        };
+
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          const csvData = event.target.result;
+          worker.postMessage(csvData);
+          const progressDiv = document.getElementById("progress")
+          progressDiv.style.display = "block";
+        };
+        reader.readAsText(file);
+      }
+    </script>
+  </body>
+</html>
